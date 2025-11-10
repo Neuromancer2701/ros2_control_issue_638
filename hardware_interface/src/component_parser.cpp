@@ -428,7 +428,16 @@ hardware_interface::InterfaceInfo parse_interfaces_from_xml(
  * \return ComponentInfo filled with information about component
  * \throws std::runtime_error if a component attribute or tag is not found
  */
-ComponentInfo parse_component_from_xml(const tinyxml2::XMLElement * component_it)
+/// Search XML snippet from URDF for information about a complex component.
+/**
+ * A complex component can have a non-double data type specified on its interfaces,
+ *  and the interface may be an array of a fixed size of the data type.
+ *
+ * \param[in] component_it pointer to the iterator where component
+ * info should be found
+ * \throws std::runtime_error if a required component attribute or tag is not found.
+ */
+ComponentInfo parse_complex_component_from_xml(const tinyxml2::XMLElement * component_it)
 {
   ComponentInfo component;
 
@@ -450,61 +459,6 @@ ComponentInfo parse_component_from_xml(const tinyxml2::XMLElement * component_it
       component.is_mimic = MimicAttribute::NOT_SET;
     }
   }
-
-  // Option enable or disable the interface limits, by default they are enabled
-  bool enable_limits = true;
-  const auto * limits_it = component_it->FirstChildElement(kLimitsTag);
-  if (limits_it)
-  {
-    enable_limits = parse_bool(get_attribute_value(limits_it, kEnableAttribute, limits_it->Name()));
-  }
-
-  // Parse all command interfaces
-  const auto * command_interfaces_it = component_it->FirstChildElement(kCommandInterfaceTag);
-  while (command_interfaces_it)
-  {
-    InterfaceInfo cmd_info = parse_interfaces_from_xml(command_interfaces_it);
-    cmd_info.enable_limits &= enable_limits;
-    component.command_interfaces.push_back(cmd_info);
-    command_interfaces_it = command_interfaces_it->NextSiblingElement(kCommandInterfaceTag);
-  }
-
-  // Parse state interfaces
-  const auto * state_interfaces_it = component_it->FirstChildElement(kStateInterfaceTag);
-  while (state_interfaces_it)
-  {
-    InterfaceInfo state_info = parse_interfaces_from_xml(state_interfaces_it);
-    state_info.enable_limits &= enable_limits;
-    component.state_interfaces.push_back(state_info);
-    state_interfaces_it = state_interfaces_it->NextSiblingElement(kStateInterfaceTag);
-  }
-
-  // Parse parameters
-  const auto * params_it = component_it->FirstChildElement(kParamTag);
-  if (params_it)
-  {
-    component.parameters = parse_parameters_from_xml(params_it);
-  }
-
-  return component;
-}
-
-/// Search XML snippet from URDF for information about a complex component.
-/**
- * A complex component can have a non-double data type specified on its interfaces,
- *  and the interface may be an array of a fixed size of the data type.
- *
- * \param[in] component_it pointer to the iterator where component
- * info should be found
- * \throws std::runtime_error if a required component attribute or tag is not found.
- */
-ComponentInfo parse_complex_component_from_xml(const tinyxml2::XMLElement * component_it)
-{
-  ComponentInfo component;
-
-  // Find name, type and class of a component
-  component.type = component_it->Name();
-  component.name = get_attribute_value(component_it, kNameAttribute, component.type);
 
   // Parse all command interfaces
   const auto * command_interfaces_it = component_it->FirstChildElement(kCommandInterfaceTag);
@@ -769,11 +723,11 @@ HardwareInfo parse_resource_from_xml(
     }
     else if (std::string(kJointTag) == ros2_control_child_it->Name())
     {
-      hardware.joints.push_back(parse_component_from_xml(ros2_control_child_it));
+      hardware.joints.push_back(parse_complex_component_from_xml(ros2_control_child_it));
     }
     else if (std::string(kSensorTag) == ros2_control_child_it->Name())
     {
-      hardware.sensors.push_back(parse_component_from_xml(ros2_control_child_it));
+      hardware.sensors.push_back(parse_complex_component_from_xml(ros2_control_child_it));
     }
     else if (std::string(kGPIOTag) == ros2_control_child_it->Name())
     {

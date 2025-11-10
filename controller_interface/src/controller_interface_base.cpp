@@ -222,12 +222,25 @@ void ControllerInterfaceBase::assign_interfaces(
 {
   command_interfaces_ = std::forward<decltype(command_interfaces)>(command_interfaces);
   state_interfaces_ = std::forward<decltype(state_interfaces)>(state_interfaces);
+
+  for (const auto & command_interface : command_interfaces_)
+  {
+    command_interface_types_.emplace(
+      command_interface.get_name(), command_interface.get_data_type());
+  }
+
+  for (const auto & state_interface : state_interfaces_)
+  {
+    state_interface_types_.emplace(state_interface.get_name(), state_interface.get_data_type());
+  }
 }
 
 void ControllerInterfaceBase::release_interfaces()
 {
   command_interfaces_.clear();
   state_interfaces_.clear();
+  command_interface_types_.clear();
+  state_interface_types_.clear();
 }
 
 const rclcpp_lifecycle::State & ControllerInterfaceBase::get_lifecycle_state() const

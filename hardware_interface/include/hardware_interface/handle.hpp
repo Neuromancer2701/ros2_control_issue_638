@@ -61,7 +61,8 @@ std::string get_type_name()
 namespace hardware_interface
 {
 
-using HANDLE_DATATYPE = std::variant<std::monostate, double, bool>;
+using HANDLE_DATATYPE =
+  std::variant<std::monostate, double, bool, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t>;
 
 /// A handle used to get and set a value on a given interface.
 class Handle
@@ -106,6 +107,30 @@ public:
     {
       value_ptr_ = nullptr;
       value_ = initial_value.empty() ? false : hardware_interface::parse_bool(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::INT16)
+    {
+      value_ = initial_value.empty() ? (int16_t)0 : (int16_t)std::stoi(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::UINT16)
+    {
+      value_ = initial_value.empty() ? (uint16_t)0 : (uint16_t)std::stoul(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::INT32)
+    {
+      value_ = initial_value.empty() ? (int32_t)0 : (int32_t)std::stoi(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::UINT32)
+    {
+      value_ = initial_value.empty() ? (uint32_t)0 : (uint32_t)std::stoul(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::INT64)
+    {
+      value_ = initial_value.empty() ? (int64_t)0 : (int64_t)std::stoll(initial_value);
+    }
+    else if (data_type_ == hardware_interface::HandleDataType::UINT64)
+    {
+      value_ = initial_value.empty() ? (uint64_t)0 : (uint64_t)std::stoull(initial_value);
     }
     else
     {
@@ -207,36 +232,38 @@ public:
     // TODO(saikishor) return value_ if old functionality is removed
     if constexpr (std::is_same_v<T, double>)
     {
-      switch (data_type_)
+      if (
+        data_type_ != hardware_interface::HandleDataType::DOUBLE &&
+        data_type_ != hardware_interface::HandleDataType::BOOL)
       {
-        case HandleDataType::DOUBLE:
-          THROW_ON_NULLPTR(value_ptr_);
-          return *value_ptr_;
-        case HandleDataType::BOOL:
-          // TODO(christophfroehlich): replace with RCLCPP_WARN_ONCE once
-          // https://github.com/ros2/rclcpp/issues/2587
-          // is fixed
-          if (!notified_)
-          {
-            RCLCPP_WARN(
-              rclcpp::get_logger(get_name()),
-              "Casting bool to double for interface: %s. Better use get_optional<bool>().",
-              get_name().c_str());
-            notified_ = true;
-          }
-          return static_cast<double>(std::get<bool>(value_));
-        default:
-          throw std::runtime_error(
-            fmt::format(
-              FMT_COMPILE("Data type: '{}' cannot be casted to double for interface: {}"),
-              data_type_.to_string(), get_name()));
+        throw std::runtime_error(
+          fmt::format(
+            FMT_COMPILE("Data type: '{}' cannot be casted to double for interface: {}"),
+            data_type_.to_string(), get_name()));
+      }
+      if (data_type_ == hardware_interface::HandleDataType::DOUBLE)
+      {
+        THROW_ON_NULLPTR(value_ptr_);
+        return *value_ptr_;
+      }
+      if (data_type_ == hardware_interface::HandleDataType::BOOL)
+      {
+        if (!notified_)
+        {
+          RCLCPP_WARN(
+            rclcpp::get_logger(get_name()),
+            "Casting bool to double for interface: %s. Better use get_optional<bool>().",
+            get_name().c_str());
+          notified_ = true;
+        }
+        return static_cast<double>(std::get<bool>(value_));
       }
     }
-    try
+    if (std::holds_alternative<T>(value_))
     {
       return std::get<T>(value_);
     }
-    catch (const std::bad_variant_access & err)
+    else
     {
       throw std::runtime_error(
         fmt::format(
@@ -287,9 +314,18 @@ public:
     // TODO(Manuel) set value_ directly if old functionality is removed
     if constexpr (std::is_same_v<T, double>)
     {
-      // If the template is of type double, check if the value_ptr_ is not nullptr
-      THROW_ON_NULLPTR(value_ptr_);
-      *value_ptr_ = value;
+      if (data_type_ == hardware_interface::HandleDataType::DOUBLE)
+      {
+        // If the template is of type double, check if the value_ptr_ is not nullptr
+        THROW_ON_NULLPTR(value_ptr_);
+        *value_ptr_ = value;
+      }
+      else
+      {
+        throw std::runtime_error(fmt::format(
+          FMT_COMPILE("Invalid data type: '{}' access for interface: {} expected: '{}'"),
+          get_type_name<T>(), get_name(), data_type_.to_string()));
+      }
     }
     else
     {
@@ -432,12 +468,12 @@ public:
   {
     if constexpr (std::is_same_v<T, double>)
     {
-      return set_value(on_set_command_limiter_(value, is_command_limited_));
+      if (data_type_ == hardware_interface::HandleDataType::DOUBLE)
+      {
+        return set_value(on_set_command_limiter_(value, is_command_limited_));
+      }
     }
-    else
-    {
-      return set_value(value);
-    }
+    return set_value(value);
   }
 
   const bool & is_limited() const { return is_command_limited_; }

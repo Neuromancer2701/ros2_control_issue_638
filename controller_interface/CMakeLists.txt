@@ -117,6 +117,13 @@ if(BUILD_TESTING)
     hardware_interface::hardware_interface
     ${std_msgs_TARGETS}
   )
+
+  ament_add_gmock(test_controller_interface_custom_interfaces test/test_controller_interface_custom_interfaces.cpp)
+  target_link_libraries(test_controller_interface_custom_interfaces
+    controller_interface
+    hardware_interface::hardware_interface
+    ros2_control_test_assets::ros2_control_test_assets
+  )
 endif()
 
 install(

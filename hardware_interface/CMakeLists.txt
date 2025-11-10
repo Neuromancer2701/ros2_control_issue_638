@@ -101,6 +101,9 @@ if(BUILD_TESTING)
   ament_add_gmock(test_component_parser test/test_component_parser.cpp)
   target_link_libraries(test_component_parser hardware_interface ros2_control_test_assets::ros2_control_test_assets)
 
+  ament_add_gmock(test_resource_manager_custom_interfaces test/test_resource_manager_custom_interfaces.cpp)
+  target_link_libraries(test_resource_manager_custom_interfaces hardware_interface ros2_control_test_assets::ros2_control_test_assets)
+
   add_library(test_hardware_components SHARED
   test/test_hardware_components/test_single_joint_actuator.cpp
   test/test_hardware_components/test_force_torque_sensor.cpp

@@ -356,6 +356,7 @@ protected:
    * \ref get_ordered_interfaces() from \ref helpers.hpp.
    */
   std::vector<hardware_interface::LoanedCommandInterface> command_interfaces_;
+  std::unordered_map<std::string, std::string> command_interface_types_;
   /** Loaned state interfaces.
    * \note The order of these interfaces is determined by the return value of
    * \ref state_interface_configuration():
@@ -366,6 +367,7 @@ protected:
    * \ref get_ordered_interfaces() from \ref helpers.hpp.
    */
   std::vector<hardware_interface::LoanedStateInterface> state_interfaces_;
+  std::unordered_map<std::string, std::string> state_interface_types_;
 
 private:
   /**

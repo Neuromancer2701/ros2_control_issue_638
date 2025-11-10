@@ -140,7 +140,13 @@ public:
   {
     UNKNOWN = -1,
     DOUBLE,
-    BOOL
+    BOOL,
+    INT16,
+    UINT16,
+    INT32,
+    UINT32,
+    INT64,
+    UINT64
   };
 
   HandleDataType() = default;
@@ -154,6 +160,30 @@ public:
     else if (data_type == "bool")
     {
       value_ = BOOL;
+    }
+    else if (data_type == "int16")
+    {
+      value_ = INT16;
+    }
+    else if (data_type == "uint16")
+    {
+      value_ = UINT16;
+    }
+    else if (data_type == "int32")
+    {
+      value_ = INT32;
+    }
+    else if (data_type == "uint32")
+    {
+      value_ = UINT32;
+    }
+    else if (data_type == "int64")
+    {
+      value_ = INT64;
+    }
+    else if (data_type == "uint64")
+    {
+      value_ = UINT64;
     }
     else
     {
@@ -179,6 +209,18 @@ public:
         return "double";
       case BOOL:
         return "bool";
+      case INT16:
+        return "int16";
+      case UINT16:
+        return "uint16";
+      case INT32:
+        return "int32";
+      case UINT32:
+        return "uint32";
+      case INT64:
+        return "int64";
+      case UINT64:
+        return "uint64";
       default:
         return "unknown";
     }
@@ -199,6 +241,31 @@ public:
         return true;  // bool can be converted to double
       default:
         return false;  // unknown type cannot be converted
+    }
+  }
+
+  size_t get_type_hash() const
+  {
+    switch (value_)
+    {
+      case DOUBLE:
+        return typeid(double).hash_code();
+      case BOOL:
+        return typeid(bool).hash_code();
+      case INT16:
+        return typeid(std::int16_t).hash_code();
+      case UINT16:
+        return typeid(std::uint16_t).hash_code();
+      case INT32:
+        return typeid(std::int32_t).hash_code();
+      case UINT32:
+        return typeid(std::uint32_t).hash_code();
+      case INT64:
+        return typeid(std::int64_t).hash_code();
+      case UINT64:
+        return typeid(std::uint64_t).hash_code();
+      default:
+        return typeid(nullptr).hash_code();
     }
   }
 

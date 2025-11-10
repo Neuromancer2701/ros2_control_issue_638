@@ -321,6 +321,32 @@ TEST(TestHandle, interface_description_command_interface_name_getters_work)
   EXPECT_EQ(handle.get_interface_name(), POSITION_INTERFACE);
   EXPECT_EQ(handle.get_prefix_name(), JOINT_NAME_1);
 }
+
+TEST(TestHandle, interface_description_integer_data_type)
+{
+  const std::string interface_name = "some_interface";
+  const std::string itf_name = "joint1";
+  InterfaceInfo info;
+  info.name = interface_name;
+  info.data_type = "int32";
+  InterfaceDescription interface_descr(itf_name, info);
+  StateInterface handle{interface_descr};
+
+  ASSERT_EQ(hardware_interface::HandleDataType::INT32, interface_descr.get_data_type());
+  ASSERT_EQ(hardware_interface::HandleDataType::INT32, handle.get_data_type());
+  EXPECT_EQ(handle.get_name(), itf_name + "/" + interface_name);
+  EXPECT_EQ(handle.get_interface_name(), interface_name);
+  EXPECT_EQ(handle.get_prefix_name(), itf_name);
+  EXPECT_NO_THROW({ std::ignore = handle.get_optional<int32_t>(); });
+  ASSERT_EQ(handle.get_optional<int32_t>().value(), 0);
+  ASSERT_TRUE(handle.set_value((int32_t)5));
+  ASSERT_EQ(handle.get_optional<int32_t>().value(), 5);
+
+  // Test the assertions
+  ASSERT_THROW({ std::ignore = handle.set_value(-1.0); }, std::runtime_error);
+  ASSERT_THROW({ std::ignore = handle.set_value(0.0); }, std::runtime_error);
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 TEST(TestHandle, copy_constructor)
